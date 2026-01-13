@@ -1,0 +1,85 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+  engineType = "client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// User model 
+model User {
+  id        String   @id @default(cuid())
+  email     String?  @unique
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  gameStates GameState[]
+  stats      GameStats[]
+  results    GameResult[]
+}
+
+// Game Result for leaderboard
+model GameResult {
+  id          String   @id @default(cuid())
+  userId      String
+  mode        String   // "words" or "numbers"
+  date        String   // ISO date string YYYY-MM-DD
+  guesses     Int
+  timeTaken   Int      // in seconds
+  createdAt   DateTime @default(now())
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([mode, date])
+  @@index([guesses, timeTaken])
+}
+
+// Game state for daily games
+model GameState {
+  id          String   @id @default(cuid())
+  userId      String?  // Optional: null for anonymous users
+  mode        String   // "words" or "numbers"
+  seed        Int      // Daily seed
+  guesses     Json     // Array of guess results
+  currentRow  Int
+  gameStatus  String   // "playing", "won", "lost"
+  keyStates   Json     // Keyboard state
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, mode, seed])
+  @@index([userId, mode])
+  @@index([seed])
+}
+
+// Statistics for each user and game mode
+model GameStats {
+  id                  String   @id @default(cuid())
+  userId              String?  // Optional: null for anonymous users
+  mode                String   // "words" or "numbers"
+  played              Int      @default(0)
+  won                 Int      @default(0)
+  currentStreak       Int      @default(0)
+  maxStreak           Int      @default(0)
+  guessDistribution   Json     // Array of 6 numbers
+  lastPlayedDate      String?  // ISO date string
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  user                User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, mode])
+  @@index([userId])
+}
