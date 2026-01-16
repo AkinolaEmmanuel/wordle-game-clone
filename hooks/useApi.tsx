@@ -21,28 +21,32 @@ interface StatsData {
 }
 
 // Fetch daily word
-export const useWord = () => {
+export const useWord = (seed?: number) => {
   return useQuery({
-    queryKey: ['daily-word'],
+    queryKey: ['daily-word', seed],
     queryFn: async () => {
-      const res = await fetch('/api/words');
+      const url = seed ? `/api/words?seed=${seed}` : '/api/words';
+      const res = await fetch(url);
       if (!res.ok) throw new Error('Failed to fetch word');
       const json = await res.json();
       return json.data as string;
     },
+    enabled: seed !== undefined // Wait for seed to be available
   });
 };
 
 // Fetch daily number
-export const useNumber = () => {
+export const useNumber = (seed?: number) => {
   return useQuery({
-    queryKey: ['daily-number'],
+    queryKey: ['daily-number', seed],
     queryFn: async () => {
-      const res = await fetch('/api/numbers');
+        const url = seed ? `/api/numbers?seed=${seed}` : '/api/numbers';
+      const res = await fetch(url);
       if (!res.ok) throw new Error('Failed to fetch number');
       const json = await res.json();
       return json.data as string;
     },
+    enabled: seed !== undefined // Wait for seed to be available
   });
 };
 
@@ -185,21 +189,25 @@ export const useLogin = () => {
 };
 
 // Leaderboard hooks
-export const useLeaderboard = (mode: string) => {
+export const useLeaderboard = (mode: string, date?: string) => {
     return useQuery({
-        queryKey: ['leaderboard', mode],
+        queryKey: ['leaderboard', mode, date],
         queryFn: async () => {
-            const res = await fetch(`/api/leaderboard?mode=${mode}`);
+            const url = date 
+                ? `/api/leaderboard?mode=${mode}&date=${date}`
+                : `/api/leaderboard?mode=${mode}`;
+            const res = await fetch(url);
             if (!res.ok) throw new Error('Failed to fetch leaderboard');
             const json = await res.json();
             return json.data;
-        }
+        },
+        enabled: !!date
     });
 };
 
 export const useRecordResult = () => {
     return useMutation({
-        mutationFn: async (data: { userId: string, mode: string, guesses: number, timeTaken: number }) => {
+        mutationFn: async (data: { userId: string, mode: string, guesses: number, timeTaken: number, date: string }) => {
             const res = await fetch('/api/leaderboard', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

@@ -9,6 +9,7 @@ interface LeaderboardModalProps {
   isOpen: boolean;
   onClose: () => void;
   mode: 'words' | 'numbers';
+  date?: string;
 }
 
 interface LeaderboardEntry {
@@ -24,9 +25,10 @@ interface LeaderboardEntry {
 export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
   isOpen,
   onClose,
-  mode
+  mode,
+  date
 }) => {
-  const { data: leaderboard, isLoading } = useLeaderboard(mode);
+  const { data: leaderboard, isLoading } = useLeaderboard(mode, date);
 
   if (!isOpen) return null;
 

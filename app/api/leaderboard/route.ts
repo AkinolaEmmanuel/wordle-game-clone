@@ -6,21 +6,15 @@ export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
         const mode = searchParams.get('mode') || 'words';
-        // Get stats for 'today' or all time? The prompt implies daily stats for the leaderboard.
-        // "The user with the least number of guesses and time taken to complete the guess is top of the stats leaderboard"
-        // Usually daily leaderboards are more common for Wordle. Let's assume daily for now, based on "return stats each day".
+        const dateParam = searchParams.get('date');
 
-        // However, getting "today" correctly requires timezone handling. For simplicity, let's query the GameResult table.
-        // We'll filter by the current UTC date string or just return the top results globally for now, maybe filtered by date if the frontend sends it.
-
-        // Let's implement a general leaderboard fetcher.
-
-        const today = new Date().toISOString().split('T')[0];
+        // Use provided date or fallback to server "today" (UTC)
+        const date = dateParam || new Date().toISOString().split('T')[0];
 
         const results = await prisma.gameResult.findMany({
             where: {
                 mode: mode,
-                date: today
+                date: date
             },
             orderBy: [
                 { guesses: 'asc' },
@@ -52,7 +46,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { userId, mode, guesses, timeTaken } = body;
+        const { userId, mode, guesses, timeTaken, date } = body;
 
         if (!userId || !mode || !guesses || !timeTaken) {
             return NextResponse.json(
@@ -61,21 +55,13 @@ export async function POST(request: Request) {
             );
         }
 
-        const today = new Date().toISOString().split('T')[0];
-
-        // Ensure user hasn't already submitted for today? The prompt doesn't strictly say one per day but it's implied by "Wordle".
-        // Use upsert or create. A user might play multiple times if we allow it, but usually it's once.
-        // Let's assume multiple tries aren't strictly blocked by DB constraints other than what we set.
-        // But for a leaderboard, we usually want their *first* winning result or *best*. 
-        // Wordle is usually once per day.
-
-        // Let's just create a record.
+        const gameDate = date || new Date().toISOString().split('T')[0];
 
         const result = await prisma.gameResult.create({
             data: {
                 userId,
                 mode,
-                date: today,
+                date: gameDate,
                 guesses,
                 timeTaken
             }

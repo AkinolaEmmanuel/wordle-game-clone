@@ -3,10 +3,14 @@ import wordsJson from "@/data/possible_solutions.json";
 import { seededRandom, getDailySolution } from "@/utils/seededRandom";
 
 
-export async function GET() {
+export async function GET(request: Request) {
     try {
+        const { searchParams } = new URL(request.url);
+        const seedParam = searchParams.get('seed');
+
         const res = wordsJson.data;
-        const seed = getDailySolution();
+        // Use client provided seed if available, otherwise fallback to server time
+        const seed = seedParam ? parseInt(seedParam) : getDailySolution();
         console.log("Seed:", seed);
         const random = seededRandom(seed);
         console.log("Random number:", random());
@@ -16,7 +20,7 @@ export async function GET() {
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         tomorrow.setHours(0, 0, 0, 0);
-        
+
 
         return NextResponse.json({
             data: word,

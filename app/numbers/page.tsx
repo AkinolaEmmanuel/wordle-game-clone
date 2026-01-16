@@ -18,6 +18,10 @@ function NumbersGame() {
   const searchParams = useSearchParams();
   const userIdParam = searchParams.get('userId');
   const [userId, setUserId] = useState<string | undefined>(userIdParam || undefined);
+  
+  // Client-side date/seed calculation
+  const seed = getDailySolution();
+  const dateStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
 
   // Fallback to localstorage user if not in params
   useEffect(() => {
@@ -29,7 +33,7 @@ function NumbersGame() {
     }
   }, [userId]);
 
-  const { data: solution, isLoading, error } = useNumber();
+  const { data: solution, isLoading, error } = useNumber(seed);
   const { data: stats, refetch: refetchStats } = useStats('numbers', userId);
   const validateGuess = useValidateGuess();
   const updateStats = useUpdateStats();
@@ -146,7 +150,7 @@ function NumbersGame() {
         if (userId) {
             await updateStats.mutateAsync({ mode: 'numbers', won: true, guessCount: currentRow + 1, userId });
             const timeTaken = Math.floor((Date.now() - startTime) / 1000);
-            await recordResult.mutateAsync({ userId, mode: 'numbers', guesses: currentRow + 1, timeTaken });
+            await recordResult.mutateAsync({ userId, mode: 'numbers', guesses: currentRow + 1, timeTaken, date: dateStr });
         }
         refetchStats();
         setTimeout(() => setShowStats(true), 1500);
@@ -262,6 +266,7 @@ function NumbersGame() {
           isOpen={showLeaderboard}
           onClose={() => setShowLeaderboard(false)}
           mode="numbers"
+          date={dateStr}
         />
       </div>
     </div>

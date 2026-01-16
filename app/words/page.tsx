@@ -18,6 +18,10 @@ function WordsGame() {
   const searchParams = useSearchParams();
   const userIdParam = searchParams.get('userId');
   const [userId, setUserId] = useState<string | undefined>(userIdParam || undefined);
+  
+  // Client-side date/seed calculation
+  const seed = getDailySolution();
+  const dateStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
 
   // Fallback to localstorage user if not in params
   useEffect(() => {
@@ -29,7 +33,7 @@ function WordsGame() {
     }
   }, [userId]);
 
-  const { data: solution, isLoading, error } = useWord();
+  const { data: solution, isLoading, error } = useWord(seed);
   const { data: stats, refetch: refetchStats } = useStats('words', userId);
   const validateGuess = useValidateGuess();
   const updateStats = useUpdateStats();
@@ -149,7 +153,7 @@ function WordsGame() {
         if (userId) {
             await updateStats.mutateAsync({ mode: 'words', won: true, guessCount: currentRow + 1, userId });
             const timeTaken = Math.floor((Date.now() - startTime) / 1000);
-            await recordResult.mutateAsync({ userId, mode: 'words', guesses: currentRow + 1, timeTaken });
+            await recordResult.mutateAsync({ userId, mode: 'words', guesses: currentRow + 1, timeTaken, date: dateStr });
         }
         refetchStats();
         setTimeout(() => setShowStats(true), 1500);
@@ -271,6 +275,7 @@ function WordsGame() {
           isOpen={showLeaderboard}
           onClose={() => setShowLeaderboard(false)}
           mode="words"
+          date={dateStr}
         />
       </div>
     </div>
